@@ -14,6 +14,10 @@ DROP DATABASE IF EXISTS tournament;
 CREATE DATABASE tournament;
 \connect tournament;
 CREATE TABLE players (
-    id    serial,
+    id    serial primary key,
     name  text
+  );
+CREATE TABLE matches (
+    winner int references players(id),
+    loser int references players(id)
   );
