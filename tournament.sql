@@ -19,7 +19,8 @@ CREATE TABLE players (
   );
 CREATE TABLE matches (
     winner int references players(id),
-    loser int references players(id)
+    loser int references players(id),
+    is_draw boolean
   );
 CREATE TABLE byes (
     player int references players(id) UNIQUE
@@ -37,7 +38,7 @@ CREATE VIEW bye_candidate(player) AS
 
 CREATE VIEW win_by_matches (player, wins) AS
   SELECT id, COUNT(winner) AS wins FROM players LEFT JOIN matches
-    ON id = winner GROUP BY id ORDER BY wins;
+    ON id = winner AND is_draw = FALSE GROUP BY id ORDER BY wins;
 
 -- Union win by matches and win by byes.
 CREATE VIEW win_records (player, win_number) AS
@@ -48,7 +49,7 @@ CREATE VIEW win_records (player, win_number) AS
 
 CREATE VIEW loss_records (player, loss_number) AS
   SELECT id, COUNT(loser) AS loss_number FROM players LEFT JOIN matches 
-    ON id = loser GROUP BY id ORDER BY loss_number;
+    ON id = loser AND is_draw = FALSE GROUP BY id ORDER BY loss_number;
 
 CREATE VIEW records (player, win_number, loss_number) AS
   SELECT win_records.player, win_number, loss_number FROM 
@@ -64,7 +65,8 @@ CREATE VIEW standings (player, name, win_number, played_matches) AS
 -- INSERT INTO players (name) VALUES ('A');
 -- INSERT INTO players (name) VALUES ('B');
 -- INSERT INTO players (name) VALUES ('C');
--- INSERT INTO matches (winner, loser) VALUES (1, 2);
+-- INSERT INTO matches (winner, loser, is_draw) VALUES (1, 2, false);
+-- INSERT INTO matches (winner, loser, is_draw) VALUES (1, 3, true);
 -- select * from win_records;
 -- select * from loss_records;
 -- select * from records;
