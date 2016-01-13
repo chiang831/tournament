@@ -16,6 +16,7 @@ def deleteMatches():
     conn = connect()
     cur = conn.cursor()
     cur.execute("""DELETE FROM matches;""")
+    cur.execute("""DELETE FROM byes;""")
     conn.commit()
     cur.close()
     conn.close()
@@ -96,6 +97,29 @@ def reportMatch(winner, loser):
     conn.close()
  
  
+def _getAndSetByePlayer():
+    """Returns an int for player id that should get bye this round.
+
+    Query the database using by_candidate view for bye candidate id.
+    Also, insert byes table to mark that player has got a bye.
+
+    Returns:
+      An int for id number of the player who should get bye this round.
+    """
+    try:
+        conn = connect()
+        cur = conn.cursor()
+        cur.execute("""SELECT player FROM bye_candidate;""")
+        query_result = cur.fetchall()
+        bye_player = query_result[0]
+        cur.execute("""INSERT INTO byes VALUES (%s, %s);""", (bye_player, 1))
+        conn.commit()
+        return bye_player
+    finally:
+        cur.close()
+        conn.close()
+
+
 def swissPairings():
     """Returns a list of pairs of players for the next round of a match.
   
@@ -111,16 +135,30 @@ def swissPairings():
         id2: the second player's unique id
         name2: the second player's name
     """
-    number_of_players = countPlayers()
-    conn = connect()
-    cur = conn.cursor()
-    pairings = [] 
-    for pair_index in xrange(0, number_of_players, 2):
-        cur.execute("""SELECT player, name FROM standings OFFSET %s LIMIT 2;""", (pair_index,))
-        query_result = cur.fetchall()
-        id1, name1 = query_result[0]
-        id2, name2 = query_result[1]
-        pairings.append((id1, name1, id2, name2))
-    cur.close()
-    conn.close()
-    return pairings
+    try:
+        number_of_players = countPlayers()
+        conn = connect()
+        cur = conn.cursor()
+        pairings = [] 
+
+        if number_of_players & 1:
+          # Decides bye player and skip that player in the query of standings.
+          bye_id = _getAndSetByePlayer()
+          for pair_index in xrange(0, number_of_players - 1, 2):
+              cur.execute("""SELECT player, name FROM standings WHERE player != %s OFFSET %s LIMIT 2;""", (bye_id, pair_index,))
+              query_result = cur.fetchall()
+              id1, name1 = query_result[0]
+              id2, name2 = query_result[1]
+              pairings.append((id1, name1, id2, name2))
+        else:
+          for pair_index in xrange(0, number_of_players, 2):
+              cur.execute("""SELECT player, name FROM standings OFFSET %s LIMIT 2;""", (pair_index,))
+              query_result = cur.fetchall()
+              id1, name1 = query_result[0]
+              id2, name2 = query_result[1]
+              pairings.append((id1, name1, id2, name2))
+
+        return pairings
+    finally:
+        cur.close()
+        conn.close()

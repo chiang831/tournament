@@ -124,6 +124,54 @@ def testPairings():
     print "8. After one match, players with one win are paired."
 
 
+def testPairingsOddPlayers():
+    deleteMatches()
+    deletePlayers()
+    registerPlayer("A")
+    registerPlayer("B")
+    registerPlayer("C")
+    registerPlayer("D")
+    registerPlayer("E")
+    standings = playerStandings()
+    [id1, id2, id3, id4, id5] = [row[0] for row in standings]
+
+    pairings = swissPairings()
+    
+    if len(pairings) != 2:
+        raise ValueError(
+            "For five players, swissPairings should return two pairs.")
+    [(pid1, pname1, pid2, pname2), (pid3, pname3, pid4, pname4)] = pairings
+
+    bye_id = (set([id1, id2, id3, id4, id5]) - set([pid1, pid2, pid3, pid4])).pop()
+
+    reportMatch(pid1, pid2)
+    reportMatch(pid3, pid4)
+
+    one_win_ids = [pid1, pid3, bye_id]
+    one_loss_ids = [pid2, pid4]
+
+    pairings = swissPairings()
+    
+    if len(pairings) != 2:
+        raise ValueError(
+            "For five players, swissPairings should return two pairs.")
+
+    [(pid1, pname1, pid2, pname2), (pid3, pname3, pid4, pname4)] = pairings
+
+    if bye_id not in [pid1, pid2, pid3, pid4]:
+        raise ValueError(
+            "Player should not get two byes")
+
+    def _has_different_wins(id_x, id_y):
+        return ((id_x in one_win_ids and id_y in one_loss_ids) or
+                (id_x in one_loss_ids and id_y in one_win_ids))
+
+    if (_has_different_wins(pid1, pid2) and _has_different_wins(pid3, pid4)):
+        raise ValueError("Pairing error. Player with more wins should be paired")
+
+    print "9. swissPairings can handle odd number players."
+
+
 if __name__ == '__main__':
     testDeleteMatches()
     testDelete()
@@ -133,6 +181,7 @@ if __name__ == '__main__':
     testStandingsBeforeMatches()
     testReportMatches()
     testPairings()
+    testPairingsOddPlayers()
     print "Success!  All tests pass!"
 
 
