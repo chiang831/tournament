@@ -22,13 +22,15 @@ CREATE TABLE matches (
     loser int references players(id)
   );
 CREATE TABLE byes (
-    player int references players(id) UNIQUE,
-    wins int
+    player int references players(id) UNIQUE
   );
 
+CREATE VIEW byes_with_fake_wins (player, wins) AS
+  SELECT player, 1 FROM byes;
+
 CREATE VIEW bye_counts (player, bye_number) AS
-  SELECT id, COUNT(wins) FROM players LEFT JOIN byes
-    ON id = byes.player GROUP BY id;
+  SELECT id, COUNT(wins) FROM players LEFT JOIN byes_with_fake_wins
+    ON id = byes_with_fake_wins.player GROUP BY id;
 
 CREATE VIEW bye_candidate(player) AS
   SELECT player FROM bye_counts WHERE bye_number = 0 LIMIT 1;
@@ -41,7 +43,7 @@ CREATE VIEW win_by_matches (player, wins) AS
 CREATE VIEW win_records (player, win_number) AS
   SELECT player, SUM(wins) AS win_number
     FROM (select * from win_by_matches UNION ALL
-          select * from byes) as subq
+          select * from byes_with_fake_wins) as subq
       GROUP BY player ORDER BY win_number;
 
 CREATE VIEW loss_records (player, loss_number) AS

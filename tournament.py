@@ -110,7 +110,7 @@ def _getAndSetByePlayer():
         cur.execute("""SELECT player FROM bye_candidate;""")
         query_result = cur.fetchall()
         bye_player = query_result[0]
-        cur.execute("""INSERT INTO byes VALUES (%s, %s);""", (bye_player, 1))
+        cur.execute("""INSERT INTO byes VALUES (%s);""", (bye_player,))
         conn.commit()
         return bye_player
 
