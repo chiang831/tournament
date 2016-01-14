@@ -85,6 +85,26 @@ def playerStandings():
         return standings
 
 
+def playerStandingsByPoints():
+    """Returns a list of the players and their points, sorted by points.
+
+    The first entry in the list should be the player in first place, or a player
+    tied for first place if there is currently a tie.
+
+    Returns:
+      A list of tuples, each of which contains (id, name, wins, matches):
+        id: the player's unique id (assigned by the database)
+        name: the player's full name (as registered)
+        points: the points the player has got.
+                A win is 3 point, a draw is 1 point, a loss is 0 point.
+        matches: the number of matches the player has played
+    """
+    with _connect_db() as (conn, cur):
+        cur.execute("""SELECT * FROM standing_by_points;""")
+        standings = cur.fetchall()
+        return standings
+
+
 def reportMatch(winner, loser, is_draw=False):
     """Records the outcome of a single match between two players.
 
@@ -141,7 +161,7 @@ def swissPairings():
           bye_id = _getAndSetByePlayer()
           for pair_index in xrange(0, number_of_players - 1, 2):
               cur.execute(
-                     """SELECT player, name FROM standings WHERE
+                     """SELECT player, name FROM standing_by_points WHERE
                              player != %s OFFSET %s LIMIT 2;""",
                      (bye_id, pair_index,))
               query_result = cur.fetchall()
@@ -151,7 +171,7 @@ def swissPairings():
         else:
           for pair_index in xrange(0, number_of_players, 2):
               cur.execute(
-                      """SELECT player, name FROM standings
+                      """SELECT player, name FROM standing_by_points
                               OFFSET %s LIMIT 2;""",
                       (pair_index,))
               query_result = cur.fetchall()

@@ -51,15 +51,32 @@ CREATE VIEW loss_records (player, loss_number) AS
   SELECT id, COUNT(loser) AS loss_number FROM players LEFT JOIN matches 
     ON id = loser AND is_draw = FALSE GROUP BY id ORDER BY loss_number;
 
-CREATE VIEW records (player, win_number, loss_number) AS
-  SELECT win_records.player, win_number, loss_number FROM 
-    win_records JOIN loss_records on win_records.player = loss_records.player;
+CREATE VIEW draw_records (player, draw_number) AS
+  SELECT id, COUNT(is_draw) AS draw_number FROM players LEFT JOIN matches 
+    ON (id = loser OR id = winner) AND is_draw = TRUE GROUP BY id;
+
+CREATE VIEW records (player, win_number, loss_number, draw_number) AS
+  SELECT win_records.player, win_number, loss_number, draw_number FROM 
+    win_records JOIN loss_records on win_records.player = loss_records.player
+      JOIN draw_records on win_records.player = draw_records.player;
 
 -- Note that win_number and played_matches in this table includes bye.
 CREATE VIEW standings (player, name, win_number, played_matches) AS
-  SELECT player, name, win_number, win_number + loss_number as played_matches
+  SELECT player, name, win_number,
+    win_number + loss_number + draw_number as played_matches
     FROM players JOIN records on players.id = records.player
       ORDER BY win_number DESC,  played_matches;
+
+-- A win is 3 points, a draw is 1 point, and a loss is 0 point.
+CREATE VIEW points_table (player, points) AS
+  SELECT player, win_number * 3 + draw_number * 1 FROM records;
+
+CREATE VIEW standing_by_points (player, name, points, played_matches) AS
+  SELECT id as player, name, points,
+    win_number + loss_number + draw_number as played_matches
+    FROM players JOIN records on players.id = records.player
+      JOIN points_table on players.id = points_table.player
+        ORDER BY points DESC,  played_matches;
 
 -- DEBUG USAGE
 -- INSERT INTO players (name) VALUES ('A');
@@ -67,7 +84,10 @@ CREATE VIEW standings (player, name, win_number, played_matches) AS
 -- INSERT INTO players (name) VALUES ('C');
 -- INSERT INTO matches (winner, loser, is_draw) VALUES (1, 2, false);
 -- INSERT INTO matches (winner, loser, is_draw) VALUES (1, 3, true);
--- select * from win_records;
--- select * from loss_records;
--- select * from records;
+-- INSERT INTO matches (winner, loser, is_draw) VALUES (2, 3, true);
+-- INSERT INTO matches (winner, loser, is_draw) VALUES (1, 3, true);
+-- select * from draw_records;
+-- select * from records; 
+-- select * from points_table; 
 -- select * from standings;
+-- select * from standing_by_points; 

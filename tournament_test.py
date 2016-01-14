@@ -172,6 +172,58 @@ def testPairingsOddPlayers():
     print "9. swissPairings can handle odd number players."
 
 
+def testStandingsByPointsBeforeMatches():
+    deleteMatches()
+    deletePlayers()
+    registerPlayer("Melpomene Murray")
+    registerPlayer("Randy Schwartz")
+    standings = playerStandingsByPoints()
+    if len(standings) < 2:
+        raise ValueError("Players should appear in playerStandings even before "
+                         "they have played any matches.")
+    elif len(standings) > 2:
+        raise ValueError("Only registered players should appear in standings.")
+    if len(standings[0]) != 4:
+        raise ValueError("Each playerStandings row should have four columns.")
+    [(id1, name1, points1, matches1), (id2, name2, points2, matches2)] = standings
+    if matches1 != 0 or matches2 != 0 or points1!= 0 or points2!= 0:
+        raise ValueError(
+            "Newly registered players should have no matches or points.")
+    if set([name1, name2]) != set(["Melpomene Murray", "Randy Schwartz"]):
+        raise ValueError("Registered players' names should appear in standings, "
+                         "even if they have no matches played.")
+    print "10. Newly registered players appear in the standings with no matches."
+
+
+def testReportMatchesWithDraw():
+    deleteMatches()
+    deletePlayers()
+    registerPlayer("Bruno Walton")
+    registerPlayer("Boots O'Neal")
+    registerPlayer("Cathy Burton")
+    registerPlayer("Diane Grant")
+    standings = playerStandings()
+    [id1, id2, id3, id4] = [row[0] for row in standings]
+    reportMatch(id1, id2, is_draw=False)
+    reportMatch(id3, id4, is_draw=False)
+    reportMatch(id1, id3, is_draw=True)
+    reportMatch(id2, id4, is_draw=True)
+    reportMatch(id2, id3, is_draw=False)
+    reportMatch(id1, id4, is_draw=True)
+    #   id   win    loss   draw   points
+    #  id1    1               2        5
+    #  id2    1        1      1        4
+    #  id3    1        1      1        4
+    #  id4    0        1      2        2
+    standings = playerStandingsByPoints()
+    if standings[0][0] != id1 or standings[3][0] != id4:
+        raise ValueError("Standing by points has wrong rank.")
+    if ((standings[0][2], standings[1][2], standings[2][2], standings[3][2]) !=
+        (5, 4, 4, 2)):
+        raise ValueError("Standing by points has wrong points.")
+    print "11, Standing by points is correct."
+
+
 if __name__ == '__main__':
     testDeleteMatches()
     testDelete()
@@ -182,6 +234,6 @@ if __name__ == '__main__':
     testReportMatches()
     testPairings()
     testPairingsOddPlayers()
+    testStandingsByPointsBeforeMatches()
+    testReportMatchesWithDraw()
     print "Success!  All tests pass!"
-
-
