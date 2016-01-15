@@ -183,12 +183,15 @@ def testStandingsByPointsBeforeMatches():
                          "they have played any matches.")
     elif len(standings) > 2:
         raise ValueError("Only registered players should appear in standings.")
-    if len(standings[0]) != 4:
-        raise ValueError("Each playerStandings row should have four columns.")
-    [(id1, name1, points1, matches1), (id2, name2, points2, matches2)] = standings
+    if len(standings[0]) != 5:
+        raise ValueError("Each playerStandings row should have five columns.")
+    [(id1, name1, points1, omw1, matches1), (id2, name2, points2, omw2, matches2)] = standings
     if matches1 != 0 or matches2 != 0 or points1!= 0 or points2!= 0:
         raise ValueError(
             "Newly registered players should have no matches or points.")
+    if omw1!= 0 or omw2 != 0 :
+        raise ValueError(
+            "Newly registered players should have no omw.")
     if set([name1, name2]) != set(["Melpomene Murray", "Randy Schwartz"]):
         raise ValueError("Registered players' names should appear in standings, "
                          "even if they have no matches played.")
@@ -211,7 +214,7 @@ def testReportMatchesWithDraw():
     reportMatch(id2, id3, is_draw=False)
     reportMatch(id1, id4, is_draw=True)
     #   id   win    loss   draw   points
-    #  id1    1               2        5
+    #  id1    1        0      2        5
     #  id2    1        1      1        4
     #  id3    1        1      1        4
     #  id4    0        1      2        2
@@ -223,6 +226,56 @@ def testReportMatchesWithDraw():
         raise ValueError("Standing by points has wrong points.")
     print "11, Standing by points is correct."
 
+
+def testReportMatchesWithDrawRankByOpponentWins():
+    deleteMatches()
+    deletePlayers()
+    registerPlayer("A")
+    registerPlayer("B")
+    registerPlayer("C")
+    registerPlayer("D")
+    registerPlayer("E")
+    registerPlayer("F")
+    registerPlayer("G")
+    standings = playerStandings()
+    [id1, id2, id3, id4, id5, id6, id7] = [row[0] for row in standings]
+    reportMatch(id1, id2, is_draw=False);
+    reportMatch(id3, id4, is_draw=False);
+    reportMatch(id1, id3, is_draw=True);
+    reportMatch(id2, id5, is_draw=True);
+    reportMatch(id2, id3, is_draw=False);
+    reportMatch(id1, id4, is_draw=True);
+    reportMatch(id5, id6, is_draw=False);
+
+    # records:
+    # player | win_number | loss_number | draw_number
+    #--------+------------+-------------+------------
+    #      1 |          1 |           0 |           2
+    #      2 |          1 |           1 |           1
+    #      3 |          1 |           1 |           1
+    #      4 |          0 |           1 |           1
+    #      5 |          1 |           0 |           1
+    #      6 |          0 |           1 |           0
+    #      7 |          0 |           0 |           0
+    #
+    # standings ranked by points, omw, and played_matches.
+    # player | name | points | omw | played_matches
+    #--------+------+--------+-----+----------------
+    #      1 | A    |      5 |   2 |              3
+    #      2 | B    |      4 |   3 |              3
+    #      3 | C    |      4 |   2 |              3
+    #      5 | E    |      4 |   1 |              2
+    #      4 | D    |      1 |   2 |              2
+    #      6 | F    |      0 |   1 |              1
+    #      7 | G    |      0 |   0 |              0
+
+    standings = playerStandingsByPoints()
+    standings_ids = [x[0] for x in standings]
+    
+    if standings_ids != [id1, id2, id3, id5, id4, id6, id7]:
+        raise ValueError("Standing by points has wrong rank.")
+    print ("12, Standing by points can use opponent match wins to rank players"
+           " with same points.")
 
 if __name__ == '__main__':
     testDeleteMatches()
@@ -236,4 +289,5 @@ if __name__ == '__main__':
     testPairingsOddPlayers()
     testStandingsByPointsBeforeMatches()
     testReportMatchesWithDraw()
+    testReportMatchesWithDrawRankByOpponentWins()
     print "Success!  All tests pass!"

@@ -92,15 +92,18 @@ def playerStandingsByPoints():
     tied for first place if there is currently a tie.
 
     Returns:
-      A list of tuples, each of which contains (id, name, wins, matches):
+      A list of tuples, each of which contains (id, name, wins, omw, matches):
         id: the player's unique id (assigned by the database)
         name: the player's full name (as registered)
         points: the points the player has got.
                 A win is 3 point, a draw is 1 point, a loss is 0 point.
+        omw: Opponent match wins. The total number of wins by players a player
+             have played against. Note that if A plays with B twice, the
+             number of wins of B will be counted twice in A's OWM.
         matches: the number of matches the player has played
     """
     with _connect_db() as (conn, cur):
-        cur.execute("""SELECT * FROM standing_by_points;""")
+        cur.execute("""SELECT * FROM standing_by_points_and_omw;""")
         standings = cur.fetchall()
         return standings
 
